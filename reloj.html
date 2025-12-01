@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,6 +18,7 @@
             background-position: center;
             margin: 0;
         }
+
         .info-box {
             background: rgba(0, 0, 0, 0.6);
             padding: 20px;
@@ -25,10 +27,12 @@
             max-width: 400px;
             width: 100%;
         }
+
         #clock {
             font-size: 48px;
             margin-bottom: 20px;
         }
+
         #weather {
             font-size: 24px;
             margin-bottom: 20px;
@@ -36,16 +40,19 @@
             align-items: center;
             justify-content: center;
         }
+
         #weather-icon {
-            width: 100px; /* Ajusta el tamaño del icono según lo necesites */
+            width: 100px;
             margin-right: 5px;
         }
+
         #extra-info {
             font-size: 20px;
         }
     </style>
-    <link rel="icon" type="image/png" id="favicon" href="default_icon.png"> <!-- Icono predeterminado -->
+    <link rel="icon" type="image/png" id="favicon" href="default_icon.png">
 </head>
+
 <body>
     <div class="info-box">
         <div id="clock">Cargando hora...</div>
@@ -62,26 +69,51 @@
             document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
         }
 
-        function getBackgroundImage(condition, isDay) {
-            if (condition.includes('rain')) {
-                return isDay ? 'img/day_rain.jpg' : 'img/night_rain.jpg';
-            } else if (condition.includes('clear')) {
-                return isDay ? 'img/day_clear.jpg' : 'img/night_clear.jpg';
-            } else if (condition.includes('cloud')) {
-                return isDay ? 'img/day_cloudy.jpg' : 'img/night_cloudy.jpg';
-            } else if (condition.includes('snow')) {
-                return isDay ? 'img/day_snow.jpg' : 'img/night_snow.jpg';
-            } else if (condition.includes('thunderstorm')) {
+        function getBackgroundImage(conditionCode, isDay) {
+            // Mapeo basado en códigos de condición de WeatherAPI
+            // https://www.weatherapi.com/docs/weather_conditions.json
+
+            // Tormentas (códigos 1087, 1273-1282)
+            if (conditionCode === 1087 || (conditionCode >= 1273 && conditionCode <= 1282)) {
                 return isDay ? 'img/day_thunderstorm.jpg' : 'img/night_thunderstorm.jpg';
-            } else if (condition.includes('fog') || condition.includes('mist')) {
+            }
+
+            // Lluvia (códigos 1063, 1150, 1153, 1168-1171, 1180-1201, 1240-1246)
+            if (conditionCode === 1063 || conditionCode === 1150 || conditionCode === 1153 ||
+                (conditionCode >= 1168 && conditionCode <= 1171) ||
+                (conditionCode >= 1180 && conditionCode <= 1201) ||
+                (conditionCode >= 1240 && conditionCode <= 1246)) {
+                return isDay ? 'img/day_rain.jpg' : 'img/night_rain.jpg';
+            }
+
+            // Nieve (códigos 1066, 1114, 1117, 1204-1237, 1255-1264)
+            if (conditionCode === 1066 || conditionCode === 1114 || conditionCode === 1117 ||
+                (conditionCode >= 1204 && conditionCode <= 1237) ||
+                (conditionCode >= 1255 && conditionCode <= 1264)) {
+                return isDay ? 'img/day_snow.jpg' : 'img/night_snow.jpg';
+            }
+
+            // Niebla/Neblina (códigos 1030, 1135, 1147)
+            if (conditionCode === 1030 || conditionCode === 1135 || conditionCode === 1147) {
                 return isDay ? 'img/day_fog.jpg' : 'img/night_fog.jpg';
             }
-            // Default condition
+
+            // Nublado (códigos 1003, 1006, 1009)
+            if (conditionCode === 1003 || conditionCode === 1006 || conditionCode === 1009) {
+                return isDay ? 'img/day_cloudy.jpg' : 'img/night_cloudy.jpg';
+            }
+
+            // Despejado (código 1000)
+            if (conditionCode === 1000) {
+                return isDay ? 'img/day_clear.jpg' : 'img/night_clear.jpg';
+            }
+
+            // Default: despejado
             return isDay ? 'img/day_clear.jpg' : 'img/night_clear.jpg';
         }
 
         async function updateWeather() {
-            const apiKey = 'f185361bbb5545d684220908241406'; // Reemplaza 'TU_API_KEY' con tu clave API de WeatherAPI
+            const apiKey = 'f185361bbb5545d684220908241406';
             const city = 'San Luis Potosi';
             const url = `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${city}&lang=es`;
 
@@ -92,7 +124,8 @@
                 }
                 const data = await response.json();
                 const temp = data.current.temp_c;
-                const description = data.current.condition.text.toLowerCase();
+                const description = data.current.condition.text;
+                const conditionCode = data.current.condition.code; // Código de condición
                 const isDay = data.current.is_day === 1;
                 const feelsLike = data.current.feelslike_c;
                 const humidity = data.current.humidity;
@@ -102,8 +135,7 @@
                 const pressure = data.current.pressure_mb;
                 const cloud = data.current.cloud;
                 const precip = data.current.precip_mm;
-                const lastUpdated = data.current.last_updated;
-                const iconUrl = 'https:' + data.current.condition.icon; // URL completo del icono
+                const iconUrl = 'https:' + data.current.condition.icon;
 
                 // Actualizar texto y mostrar icono del clima
                 document.getElementById('weather').innerHTML = `
@@ -120,8 +152,8 @@
                     <p>Precipitación: ${precip} mm</p>
                 `;
 
-                // Cambiar imagen de fondo basado en el clima y la hora del día
-                const bgImage = getBackgroundImage(description, isDay);
+                // Cambiar imagen de fondo basado en el código de condición y la hora del día
+                const bgImage = getBackgroundImage(conditionCode, isDay);
                 document.body.style.backgroundImage = `url('${bgImage}')`;
 
                 // Cambiar el ícono de la pestaña del navegador
@@ -136,7 +168,8 @@
         setInterval(updateClock, 1000);
         updateClock();
         updateWeather();
-        setInterval(updateWeather, 60000);  // Actualizar clima cada 60 segundos
+        setInterval(updateWeather, 60000);
     </script>
 </body>
+
 </html>

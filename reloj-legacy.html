@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reloj y Clima</title>
+    <style>
+        body {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            justify-content: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            background: #333;
+            color: white;
+            background-size: cover;
+            background-position: center;
+            margin: 0;
+        }
+
+        .info-box {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        #clock {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        #weather {
+            font-size: 24px;
+            margin-bottom: 20px;
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            justify-content: center;
+        }
+
+        #weather-icon {
+            width: 100px;
+            margin-right: 5px;
+        }
+
+        #extra-info {
+            font-size: 20px;
+        }
+    </style>
+    <link rel="icon" type="image/png" id="favicon" href="default_icon.png">
+</head>
+
+<body>
+    <div class="info-box">
+        <div id="clock">Cargando hora...</div>
+        <div id="weather">Cargando clima...</div>
+        <div id="extra-info"></div>
+    </div>
+
+    <script>
+        function padStart(str, targetLength, padString) {
+            str = String(str);
+            targetLength = targetLength >> 0;
+            padString = String(padString || ' ');
+            if (str.length > targetLength) {
+                return str;
+            }
+            targetLength = targetLength - str.length;
+            if (targetLength > padString.length) {
+                padString += padString.repeat(targetLength / padString.length);
+            }
+            return padString.slice(0, targetLength) + str;
+        }
+
+        function updateClock() {
+            var now = new Date();
+            var hours = padStart(now.getHours(), 2, '0');
+            var minutes = padStart(now.getMinutes(), 2, '0');
+            var seconds = padStart(now.getSeconds(), 2, '0');
+            document.getElementById('clock').textContent = hours + ':' + minutes + ':' + seconds;
+        }
+
+        function getBackgroundImage(conditionCode, isDay) {
+            // Mapeo basado en códigos de condición de WeatherAPI
+
+            // Tormentas (códigos 1087, 1273-1282)
+            if (conditionCode === 1087 || (conditionCode >= 1273 && conditionCode <= 1282)) {
+                return isDay ? 'img/day_thunderstorm.jpg' : 'img/night_thunderstorm.jpg';
+            }
+
+            // Lluvia (códigos 1063, 1150, 1153, 1168-1171, 1180-1201, 1240-1246)
+            if (conditionCode === 1063 || conditionCode === 1150 || conditionCode === 1153 ||
+                (conditionCode >= 1168 && conditionCode <= 1171) ||
+                (conditionCode >= 1180 && conditionCode <= 1201) ||
+                (conditionCode >= 1240 && conditionCode <= 1246)) {
+                return isDay ? 'img/day_rain.jpg' : 'img/night_rain.jpg';
+            }
+
+            // Nieve (códigos 1066, 1114, 1117, 1204-1237, 1255-1264)
+            if (conditionCode === 1066 || conditionCode === 1114 || conditionCode === 1117 ||
+                (conditionCode >= 1204 && conditionCode <= 1237) ||
+                (conditionCode >= 1255 && conditionCode <= 1264)) {
+                return isDay ? 'img/day_snow.jpg' : 'img/night_snow.jpg';
+            }
+
+            // Niebla/Neblina (códigos 1030, 1135, 1147)
+            if (conditionCode === 1030 || conditionCode === 1135 || conditionCode === 1147) {
+                return isDay ? 'img/day_fog.jpg' : 'img/night_fog.jpg';
+            }
+
+            // Nublado (códigos 1003, 1006, 1009)
+            if (conditionCode === 1003 || conditionCode === 1006 || conditionCode === 1009) {
+                return isDay ? 'img/day_cloudy.jpg' : 'img/night_cloudy.jpg';
+            }
+
+            // Despejado (código 1000)
+            if (conditionCode === 1000) {
+                return isDay ? 'img/day_clear.jpg' : 'img/night_clear.jpg';
+            }
+
+            // Default: despejado
+            return isDay ? 'img/day_clear.jpg' : 'img/night_clear.jpg';
+        }
+
+        function updateWeather() {
+            var apiKey = 'f185361bbb5545d684220908241406';
+            var city = 'San Luis Potosi';
+            var url = 'https://api.weatherapi.com/v1/current.json?key=' + apiKey + '&q=' + city + '&lang=es';
+
+            // Usar XMLHttpRequest en lugar de fetch para compatibilidad
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+
+            xhr.onload = function () {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        var temp = data.current.temp_c;
+                        var description = data.current.condition.text;
+                        var conditionCode = data.current.condition.code;
+                        var isDay = data.current.is_day === 1;
+                        var feelsLike = data.current.feelslike_c;
+                        var humidity = data.current.humidity;
+                        var windSpeed = data.current.wind_kph;
+                        var windDir = data.current.wind_dir;
+                        var uvIndex = data.current.uv;
+                        var pressure = data.current.pressure_mb;
+                        var cloud = data.current.cloud;
+                        var precip = data.current.precip_mm;
+                        var iconUrl = 'https:' + data.current.condition.icon;
+
+                        // Actualizar texto y mostrar icono del clima
+                        document.getElementById('weather').innerHTML =
+                            '<img id="weather-icon" src="' + iconUrl + '" alt="' + description + '"> ' +
+                            '<span>Clima en ' + city + ': ' + temp + '°C, ' + description + '</span>';
+
+                        document.getElementById('extra-info').innerHTML =
+                            '<p>Sensación térmica: ' + feelsLike + '°C</p>' +
+                            '<p>Humedad: ' + humidity + '%</p>' +
+                            '<p>Viento: ' + windSpeed + ' kph desde ' + windDir + '</p>' +
+                            '<p>Índice UV: ' + uvIndex + '</p>' +
+                            '<p>Presión: ' + pressure + ' mb</p>' +
+                            '<p>Nubosidad: ' + cloud + '%</p>' +
+                            '<p>Precipitación: ' + precip + ' mm</p>';
+
+                        // Cambiar imagen de fondo basado en el código de condición
+                        var bgImage = getBackgroundImage(conditionCode, isDay);
+                        document.body.style.backgroundImage = 'url(\'' + bgImage + '\')';
+
+                        // Cambiar el ícono de la pestaña del navegador
+                        var favicon = document.getElementById('favicon');
+                        favicon.href = iconUrl;
+                    } catch (error) {
+                        console.error('Error procesando el clima:', error);
+                        document.getElementById('weather').textContent = 'Error procesando el clima';
+                    }
+                } else {
+                    console.error('Error en la solicitud del clima:', xhr.statusText);
+                    document.getElementById('weather').textContent = 'No se pudo obtener el clima';
+                }
+            };
+
+            xhr.onerror = function () {
+                console.error('Error de red al obtener el clima');
+                document.getElementById('weather').textContent = 'Error de conexión';
+            };
+
+            xhr.send();
+        }
+
+        setInterval(updateClock, 1000);
+        updateClock();
+        updateWeather();
+        setInterval(updateWeather, 60000);
+    </script>
+</body>
+
+</html>
