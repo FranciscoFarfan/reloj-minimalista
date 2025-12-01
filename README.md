@@ -9,6 +9,6 @@ Prueba en vivo <a href="https://franciscofarfan.github.io/Pruebas/reloj-minimali
 ## Características
 - Interfaz minimalista y limpia.
 - Muestra la hora actual en tiempo real.
-- Consulta y despliega el clima de tu ciudad.
+- Consulta y despliega el clima San Luis Potosí.
 - 100% desarrollado en HTML, CSS y JavaScript.
 - Ligero y fácil de personalizar.
